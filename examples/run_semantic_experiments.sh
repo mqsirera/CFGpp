@@ -75,7 +75,7 @@ run_experiment() {
         --cfg_guidance "$guidance" \
         --concept1 "$concept1" \
         --concept2 "$concept2" \
-        --base_prompts $base_prompts \
+        --base_prompts "$base_prompts" \
         --strengths $STRENGTHS \
         $method_flag
     
@@ -108,7 +108,7 @@ run_comparison() {
         --cfg_guidance "$CFG_GUIDANCE" \
         --concept1 "$concept1" \
         --concept2 "$concept2" \
-        --base_prompts $base_prompts \
+        --base_prompts "$base_prompts" \
         --strengths $STRENGTHS \
         --compare_both
     

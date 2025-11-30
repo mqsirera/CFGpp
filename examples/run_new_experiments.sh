@@ -41,45 +41,48 @@ echo -e "${BLUE}========================================${NC}"
 echo ""
 
 # Function to run prompt interpolation
+# Usage: run_interpolation name "prompt1" "prompt2" method steps compare_both
 run_interpolation() {
     local name=$1
-    local prompts=("${@:2}")
-    local method=$3
-    local steps=$4
-    local compare_both=$5
+    local prompt1=$2
+    local prompt2=$3
+    local method=$4
+    local steps=$5
+    local compare_both=$6
     
     echo -e "${GREEN}[Prompt Interpolation]${NC} ${name}"
-    echo "  Prompts: ${prompts[*]}"
+    echo "  Prompts: ${prompt1}, ${prompt2}"
     echo "  Method: ${method}"
+    echo "  Steps: ${steps}"
     
     local workdir="${WORKDIR_BASE}/interpolation_${name}"
-    local cmd="python -m examples.prompt_interpolation_experiment \
-        --workdir ${workdir} \
-        --device ${DEVICE} \
-        --model ${MODEL} \
-        --NFE ${NFE} \
-        --seed ${SEED} \
-        --cfg_guidance ${CFG_GUIDANCE} \
-        --prompts ${prompts[*]} \
-        --interpolation_method ${method}"
-    
-    # Add steps for linear/slerp, weights for multi_blend
-    if [ "$method" = "multi_blend" ]; then
-        # For multi_blend, use equal weights by default (script will handle it)
-        echo "  Using equal weights for blending"
-    else
-        echo "  Steps: ${steps}"
-        cmd="$cmd --interpolation_steps ${steps}"
-    fi
     
     if [ "$compare_both" = "true" ]; then
-        cmd="$cmd --compare_both"
+        python -m examples.prompt_interpolation_experiment \
+            --workdir "${workdir}" \
+            --device "${DEVICE}" \
+            --model "${MODEL}" \
+            --NFE "${NFE}" \
+            --seed "${SEED}" \
+            --cfg_guidance "${CFG_GUIDANCE}" \
+            --prompts "${prompt1}" "${prompt2}" \
+            --interpolation_method "${method}" \
+            --interpolation_steps "${steps}" \
+            --compare_both
     else
-        cmd="$cmd --use_cfgpp"
+        python -m examples.prompt_interpolation_experiment \
+            --workdir "${workdir}" \
+            --device "${DEVICE}" \
+            --model "${MODEL}" \
+            --NFE "${NFE}" \
+            --seed "${SEED}" \
+            --cfg_guidance "${CFG_GUIDANCE}" \
+            --prompts "${prompt1}" "${prompt2}" \
+            --interpolation_method "${method}" \
+            --interpolation_steps "${steps}" \
+            --use_cfgpp
     fi
     
-    echo "  Running: $cmd"
-    eval $cmd
     echo -e "${GREEN}✓ Completed${NC}\n"
 }
 
@@ -98,58 +101,74 @@ run_multi_blend() {
     echo "  Weights: ${weights}"
     
     local workdir="${WORKDIR_BASE}/interpolation_${name}"
-    local cmd="python -m examples.prompt_interpolation_experiment \
-        --workdir ${workdir} \
-        --device ${DEVICE} \
-        --model ${MODEL} \
-        --NFE ${NFE} \
-        --seed ${SEED} \
-        --cfg_guidance ${CFG_GUIDANCE} \
-        --prompts ${prompt1} ${prompt2} ${prompt3} \
-        --interpolation_method multi_blend \
-        --weights ${weights}"
     
     if [ "$compare_both" = "true" ]; then
-        cmd="$cmd --compare_both"
+        python -m examples.prompt_interpolation_experiment \
+            --workdir "${workdir}" \
+            --device "${DEVICE}" \
+            --model "${MODEL}" \
+            --NFE "${NFE}" \
+            --seed "${SEED}" \
+            --cfg_guidance "${CFG_GUIDANCE}" \
+            --prompts "${prompt1}" "${prompt2}" "${prompt3}" \
+            --interpolation_method multi_blend \
+            --weights ${weights} \
+            --compare_both
     else
-        cmd="$cmd --use_cfgpp"
+        python -m examples.prompt_interpolation_experiment \
+            --workdir "${workdir}" \
+            --device "${DEVICE}" \
+            --model "${MODEL}" \
+            --NFE "${NFE}" \
+            --seed "${SEED}" \
+            --cfg_guidance "${CFG_GUIDANCE}" \
+            --prompts "${prompt1}" "${prompt2}" "${prompt3}" \
+            --interpolation_method multi_blend \
+            --weights ${weights} \
+            --use_cfgpp
     fi
     
-    echo "  Running: $cmd"
-    eval $cmd
     echo -e "${GREEN}✓ Completed${NC}\n"
 }
 
 # Function to run timestep conditioning
+# Usage: run_timestep_conditioning name schedule_type compare_both [extra_args...]
 run_timestep_conditioning() {
     local name=$1
     local schedule_type=$2
     local compare_both=$3
     shift 3
-    local extra_args="$@"
+    local extra_args=("$@")
     
     echo -e "${GREEN}[Timestep Conditioning]${NC} ${name}"
     echo "  Schedule: ${schedule_type}"
     
     local workdir="${WORKDIR_BASE}/timestep_${name}"
-    local cmd="python -m examples.timestep_conditioning_experiment \
-        --workdir ${workdir} \
-        --device ${DEVICE} \
-        --model ${MODEL} \
-        --NFE ${NFE} \
-        --seed ${SEED} \
-        --cfg_guidance ${CFG_GUIDANCE} \
-        --schedule_type ${schedule_type} \
-        ${extra_args}"
     
     if [ "$compare_both" = "true" ]; then
-        cmd="$cmd --compare_both"
+        python -m examples.timestep_conditioning_experiment \
+            --workdir "${workdir}" \
+            --device "${DEVICE}" \
+            --model "${MODEL}" \
+            --NFE "${NFE}" \
+            --seed "${SEED}" \
+            --cfg_guidance "${CFG_GUIDANCE}" \
+            --schedule_type "${schedule_type}" \
+            "${extra_args[@]}" \
+            --compare_both
     else
-        cmd="$cmd --use_cfgpp"
+        python -m examples.timestep_conditioning_experiment \
+            --workdir "${workdir}" \
+            --device "${DEVICE}" \
+            --model "${MODEL}" \
+            --NFE "${NFE}" \
+            --seed "${SEED}" \
+            --cfg_guidance "${CFG_GUIDANCE}" \
+            --schedule_type "${schedule_type}" \
+            "${extra_args[@]}" \
+            --use_cfgpp
     fi
     
-    echo "  Running: $cmd"
-    eval $cmd
     echo -e "${GREEN}✓ Completed${NC}\n"
 }
 

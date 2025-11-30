@@ -25,11 +25,13 @@ echo -e "${BLUE}========================================${NC}"
 echo ""
 
 # Function to run prompt interpolation
+# Usage: run_interpolation name "prompt1" "prompt2" method steps
 run_interpolation() {
     local name=$1
-    local prompts=("${@:2}")
-    local method=$3
-    local steps=$4
+    local prompt1=$2
+    local prompt2=$3
+    local method=$4
+    local steps=$5
     
     echo -e "${GREEN}[Interpolation]${NC} ${name}"
     local workdir="${WORKDIR_BASE}/interpolation_${name}"
@@ -40,7 +42,7 @@ run_interpolation() {
         --NFE ${NFE} \
         --seed ${SEED} \
         --cfg_guidance ${CFG_GUIDANCE} \
-        --prompts ${prompts[*]} \
+        --prompts "${prompt1}" "${prompt2}" \
         --interpolation_method ${method} \
         --interpolation_steps ${steps} \
         --compare_both

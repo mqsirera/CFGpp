@@ -69,14 +69,30 @@ class SemanticDifferenceSolver:
             null_prompt = "low quality,jpeg artifacts,blurry,poorly drawn,ugly,worst quality,"
             null_embedding, _ = self.solver.get_text_embed(null_prompt, "")
         
+        # Ensure all tensors are in the correct dtype
+        # Model uses float16, but timesteps need to be float32 for time embedding
+        zt = zt.to(dtype=self.solver.dtype)
+        null_embedding = null_embedding.to(dtype=self.solver.dtype)
+        custom_embedding = custom_embedding.to(dtype=self.solver.dtype)
+        
         # Sampling loop (similar to BaseDDIM but with custom embeddings)
         pbar = tqdm(self.solver.scheduler.timesteps, desc="SD with custom embedding")
         for step, t in enumerate(pbar):
-            at = self.solver.alpha(t)
-            at_prev = self.solver.alpha(t - self.solver.skip)
+            # Keep t as integer for alpha() calls (alphas_cumprod is on CPU)
+            # Convert to int if it's a tensor to ensure proper indexing
+            t_int = int(t.item()) if isinstance(t, torch.Tensor) else int(t)
+            at = self.solver.alpha(t_int)
+            at_prev = self.solver.alpha(t_int - self.solver.skip)
+            
+            # Convert timestep to float32 for UNet (time embedding expects float32)
+            # Use the original t but ensure it's on the correct device
+            if isinstance(t, torch.Tensor):
+                t_float = t.float().to(self.device)
+            else:
+                t_float = torch.tensor(t, dtype=torch.float32, device=self.device)
             
             with torch.no_grad():
-                noise_uc, noise_c = self.solver.predict_noise(zt, t, null_embedding, custom_embedding)
+                noise_uc, noise_c = self.solver.predict_noise(zt, t_float, null_embedding, custom_embedding)
                 noise_pred = noise_uc + cfg_guidance * (noise_c - noise_uc)
             
             # tweedie
@@ -219,7 +235,6 @@ def main():
                 # Generate with both methods
                 for method_name, use_cfgpp in [("CFG", False), ("CFG++", True)]:
                     if use_cfgpp:
-                        from latent_diffusion import get_solver
                         cfgpp_solver = get_solver("ddim_cfg++", 
                                                  solver_config=solver_config, 
                                                  device=args.device)
@@ -239,7 +254,6 @@ def main():
                     print(f"    Saved baseline ({method_name}): {baseline_path}")
             else:
                 if args.use_cfgpp:
-                    from latent_diffusion import get_solver
                     cfgpp_solver = get_solver("ddim_cfg++", 
                                              solver_config=solver_config, 
                                              device=args.device)

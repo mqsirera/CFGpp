@@ -68,13 +68,16 @@ class PromptInterpolationSolver:
         # Compute angle
         theta = torch.acos(dot)
         
-        # Handle edge cases
+        # Handle edge cases - check if embeddings are nearly parallel
         sin_theta = torch.sin(theta)
-        if sin_theta.abs() < 1e-6:
+        min_sin_theta = sin_theta.abs().min().item()
+        if min_sin_theta < 1e-6:
             # Embeddings are nearly parallel, use linear interpolation
             return self.linear_interpolate(emb1, emb2, alpha)
         
-        # SLERP formula
+        # SLERP formula - add small epsilon to avoid division by zero
+        epsilon = 1e-8
+        sin_theta = sin_theta + epsilon
         w1 = torch.sin((1 - alpha) * theta) / sin_theta
         w2 = torch.sin(alpha * theta) / sin_theta
         

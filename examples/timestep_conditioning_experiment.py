@@ -21,6 +21,20 @@ from latent_diffusion import get_solver
 from utils.log_util import create_workdir, set_seed
 
 
+def make_json_serializable(obj):
+    """Convert Path objects and other non-serializable types to JSON-compatible types."""
+    if isinstance(obj, Path):
+        return str(obj)
+    elif isinstance(obj, dict):
+        return {key: make_json_serializable(value) for key, value in obj.items()}
+    elif isinstance(obj, list):
+        return [make_json_serializable(item) for item in obj]
+    elif isinstance(obj, tuple):
+        return tuple(make_json_serializable(item) for item in obj)
+    else:
+        return obj
+
+
 class TimestepConditioningSolver:
     """Wrapper around solver to enable timestep-dependent prompt conditioning."""
     
@@ -353,7 +367,7 @@ def main():
                 'schedule_type': args.schedule_type,
                 'method': method_name,
                 'path': str(img_path),
-                'config': vars(args)
+                'config': make_json_serializable(vars(args))
             })
             
             print(f"  Saved ({method_name}): {img_path}")
@@ -399,17 +413,10 @@ def main():
     
     # Save results summary
     # Convert Path objects to strings for JSON serialization
-    config_dict = vars(args).copy()
-    for key, value in config_dict.items():
-        if isinstance(value, Path):
-            config_dict[key] = str(value)
-        elif isinstance(value, list):
-            config_dict[key] = [str(v) if isinstance(v, Path) else v for v in value]
-    
     summary = {
         'schedule_type': args.schedule_type,
-        'results': all_results,
-        'config': config_dict
+        'results': make_json_serializable(all_results),
+        'config': make_json_serializable(vars(args))
     }
     
     summary_path = results_dir / "timestep_conditioning_summary.json"

@@ -398,10 +398,18 @@ def main():
         print(f"  Error generating baseline: {e}")
     
     # Save results summary
+    # Convert Path objects to strings for JSON serialization
+    config_dict = vars(args).copy()
+    for key, value in config_dict.items():
+        if isinstance(value, Path):
+            config_dict[key] = str(value)
+        elif isinstance(value, list):
+            config_dict[key] = [str(v) if isinstance(v, Path) else v for v in value]
+    
     summary = {
         'schedule_type': args.schedule_type,
         'results': all_results,
-        'config': vars(args)
+        'config': config_dict
     }
     
     summary_path = results_dir / "timestep_conditioning_summary.json"

@@ -53,35 +53,62 @@ def build_method_figure(
     entries = sorted(entries, key=lambda e: e.get("alpha", 0.0))
 
     n = len(entries)
+    # Arrange in 2 rows: calculate number of columns needed
+    n_cols = (n + 1) // 2  # Ceiling division: 10 items -> 5 cols, 9 items -> 5 cols
+    n_rows = 2
+    
     # Rough heuristic: each image gets figsize_scale units of width
+    # Increased size and reduced spacing
     fig, axes = plt.subplots(
-        1,
-        n,
-        figsize=(figsize_scale * n, figsize_scale * 0.9),
+        n_rows,
+        n_cols,
+        figsize=(figsize_scale * n_cols * 1.1, figsize_scale * 2.0),
         squeeze=False,
     )
-    axes = axes[0]
+    # Reduce spacing between subplots
+    plt.subplots_adjust(wspace=0.05, hspace=0.1)
+    
+    # Flatten axes array for easier iteration
+    axes_flat = axes.flatten()
 
-    for ax, entry in zip(axes, entries):
+    for idx, entry in enumerate(entries):
+        ax = axes_flat[idx]
         # Paths in the summary are stored workspace-relative (e.g.,
         # "examples/workdir/.../results/xxx.png"), referenced from the repo root.
-        # We therefore treat them as-is relative to the current working directory.
-        img_path = Path(entry["path"])
+        # Try multiple resolution strategies for robustness.
+        stored_path = Path(entry["path"])
+        
+        # Strategy 1: resolve relative to results_dir (most reliable - images are in results_dir)
+        img_path = results_dir / stored_path.name
+        if not img_path.exists():
+            # Strategy 2: use the stored path as-is (might be absolute or relative to repo root)
+            img_path = stored_path
+            if not img_path.exists():
+                # Strategy 3: if stored path is relative, try resolving from current working directory
+                if not img_path.is_absolute():
+                    img_path = Path.cwd() / stored_path
+                # Strategy 4: if still not found, try resolving from results_dir's parent
+                if not img_path.exists():
+                    # Extract just the filename and resolve from results_dir
+                    img_path = results_dir / stored_path.name
 
         try:
+            if not img_path.exists():
+                raise FileNotFoundError(f"Image not found: {img_path}")
             img = Image.open(img_path).convert("RGB")
         except Exception as e:
             ax.set_title(f"Error\n{img_path.name}", fontsize=8)
             ax.axis("off")
+            print(f"Warning: Could not load image {stored_path}: {e}")
             continue
 
         ax.imshow(img)
         ax.axis("off")
         alpha = entry.get("alpha", None)
         if alpha is not None:
-            ax.set_title(rf"$\alpha={alpha:.2f}$", fontsize=10)
+            ax.set_title(rf"$\alpha={alpha:.2f}$", fontsize=14)
         else:
-            ax.set_title(img_path.name, fontsize=8)
+            ax.set_title(img_path.name, fontsize=12)
 
     prompts = []
     if entries and "prompt1" in entries[0] and "prompt2" in entries[0]:
@@ -90,12 +117,17 @@ def build_method_figure(
     if prompts:
         plt.suptitle(
             f"{method_name} interpolation: '{prompts[0]}' → '{prompts[1]}'",
-            fontsize=12,
+            fontsize=16,
         )
     else:
-        plt.suptitle(f"{method_name} interpolation", fontsize=12)
+        plt.suptitle(f"{method_name} interpolation", fontsize=16)
 
-    plt.tight_layout(rect=[0, 0, 1, 0.9])
+    # Hide unused subplots if we have an odd number of images
+    for idx in range(n, len(axes_flat)):
+        axes_flat[idx].axis("off")
+    
+    # Tight layout with minimal padding
+    plt.tight_layout(rect=[0, 0, 1, 0.96], pad=1.0)
     out_path = results_dir / output_name
     fig.savefig(out_path, dpi=200)
     plt.close(fig)

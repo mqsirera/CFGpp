@@ -202,7 +202,10 @@ def main():
     parser.add_argument("--model", type=str, default='sd15', choices=["sd15", "sd20", "sdxl"])
     parser.add_argument("--NFE", type=int, default=50)
     parser.add_argument("--seed", type=int, default=42)
-    parser.add_argument("--cfg_guidance", type=float, default=7.5)
+    parser.add_argument("--cfg_guidance", type=float, default=7.5,
+                       help="Guidance scale for standard CFG (default: 7.5)")
+    parser.add_argument("--cfgpp_guidance", type=float, default=0.6,
+                       help="Guidance scale for CFG++ (default: 0.6; recommended range ≈ 0.3–1.0)")
     parser.add_argument("--use_cfgpp", action="store_true",
                        help="Use CFG++ sampling instead of standard CFG")
     parser.add_argument("--compare_both", action="store_true",
@@ -349,10 +352,12 @@ def main():
         
         for method_name, use_cfgpp in methods_to_test:
             print(f"\nGenerating with {method_name}...")
+            # Use separate guidance scales for CFG vs CFG++
+            guidance_scale = args.cfgpp_guidance if use_cfgpp else args.cfg_guidance
             img = timestep_solver.sample_with_timestep_conditioning(
                 schedule_fn,
                 null_emb,
-                cfg_guidance=args.cfg_guidance,
+                cfg_guidance=guidance_scale,
                 use_cfgpp=use_cfgpp,
                 seed=args.seed
             )
@@ -396,10 +401,12 @@ def main():
             return baseline_emb
         
         for method_name, use_cfgpp in methods_to_test:
+            # Use separate guidance scales for CFG vs CFG++
+            guidance_scale = args.cfgpp_guidance if use_cfgpp else args.cfg_guidance
             baseline_img = timestep_solver.sample_with_timestep_conditioning(
                 constant_schedule,
                 null_emb,
-                cfg_guidance=args.cfg_guidance,
+                cfg_guidance=guidance_scale,
                 use_cfgpp=use_cfgpp,
                 seed=args.seed
             )

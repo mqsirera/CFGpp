@@ -12,6 +12,7 @@ MODEL="${MODEL:-sd15}"
 NFE="${NFE:-50}"
 SEED="${SEED:-42}"
 CFG_GUIDANCE="${CFG_GUIDANCE:-7.5}"
+CFGPP_GUIDANCE="${CFGPP_GUIDANCE:-0.6}"
 
 # Colors
 GREEN='\033[0;32m'
@@ -42,6 +43,7 @@ run_interpolation() {
         --NFE ${NFE} \
         --seed ${SEED} \
         --cfg_guidance ${CFG_GUIDANCE} \
+        --cfgpp_guidance ${CFGPP_GUIDANCE} \
         --prompts "${prompt1}" "${prompt2}" \
         --interpolation_method ${method} \
         --interpolation_steps ${steps} \
@@ -65,6 +67,7 @@ run_timestep() {
         --NFE ${NFE} \
         --seed ${SEED} \
         --cfg_guidance ${CFG_GUIDANCE} \
+        --cfgpp_guidance ${CFGPP_GUIDANCE} \
         --schedule_type ${schedule_type} \
         --compare_both \
         ${extra_args}

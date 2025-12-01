@@ -28,6 +28,7 @@ MODEL="${MODEL:-sd15}"
 NFE="${NFE:-50}"
 SEED="${SEED:-42}"
 CFG_GUIDANCE="${CFG_GUIDANCE:-7.5}"
+CFGPP_GUIDANCE="${CFGPP_GUIDANCE:-0.6}"
 
 # Colors for output
 GREEN='\033[0;32m'
@@ -65,6 +66,7 @@ run_interpolation() {
             --NFE "${NFE}" \
             --seed "${SEED}" \
             --cfg_guidance "${CFG_GUIDANCE}" \
+            --cfgpp_guidance "${CFGPP_GUIDANCE}" \
             --prompts "${prompt1}" "${prompt2}" \
             --interpolation_method "${method}" \
             --interpolation_steps "${steps}" \
@@ -77,6 +79,7 @@ run_interpolation() {
             --NFE "${NFE}" \
             --seed "${SEED}" \
             --cfg_guidance "${CFG_GUIDANCE}" \
+            --cfgpp_guidance "${CFGPP_GUIDANCE}" \
             --prompts "${prompt1}" "${prompt2}" \
             --interpolation_method "${method}" \
             --interpolation_steps "${steps}" \
@@ -110,6 +113,7 @@ run_multi_blend() {
             --NFE "${NFE}" \
             --seed "${SEED}" \
             --cfg_guidance "${CFG_GUIDANCE}" \
+            --cfgpp_guidance "${CFGPP_GUIDANCE}" \
             --prompts "${prompt1}" "${prompt2}" "${prompt3}" \
             --interpolation_method multi_blend \
             --weights ${weights} \
@@ -122,6 +126,7 @@ run_multi_blend() {
             --NFE "${NFE}" \
             --seed "${SEED}" \
             --cfg_guidance "${CFG_GUIDANCE}" \
+            --cfgpp_guidance "${CFGPP_GUIDANCE}" \
             --prompts "${prompt1}" "${prompt2}" "${prompt3}" \
             --interpolation_method multi_blend \
             --weights ${weights} \
@@ -153,6 +158,7 @@ run_timestep_conditioning() {
             --NFE "${NFE}" \
             --seed "${SEED}" \
             --cfg_guidance "${CFG_GUIDANCE}" \
+            --cfgpp_guidance "${CFGPP_GUIDANCE}" \
             --schedule_type "${schedule_type}" \
             "${extra_args[@]}" \
             --compare_both
@@ -164,6 +170,7 @@ run_timestep_conditioning() {
             --NFE "${NFE}" \
             --seed "${SEED}" \
             --cfg_guidance "${CFG_GUIDANCE}" \
+            --cfgpp_guidance "${CFGPP_GUIDANCE}" \
             --schedule_type "${schedule_type}" \
             "${extra_args[@]}" \
             --use_cfgpp

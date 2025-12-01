@@ -34,6 +34,7 @@ python -m examples.semantic_difference_experiment \
     --NFE "$NFE" \
     --seed "$SEED" \
     --cfg_guidance "$CFG_GUIDANCE" \
+    --cfgpp_guidance "$CFGPP_GUIDANCE" \
     --concept1 "a girl" \
     --concept2 "a boy" \
     --base_prompts "a portrait of a person" \
@@ -85,7 +86,8 @@ python -m examples.semantic_difference_experiment \
 #     --model "$MODEL" \
 #     --NFE "$NFE" \
 #     --seed "$SEED" \
-#     --cfg_guidance "$CFGPP_GUIDANCE" \
+#     --cfg_guidance "$CFG_GUIDANCE" \
+#     --cfgpp_guidance "$CFGPP_GUIDANCE" \
 #     --concept1 "a girl" \
 #     --concept2 "a boy" \
 #     --base_prompts "a portrait of a person" \
@@ -100,6 +102,7 @@ python -m examples.semantic_difference_experiment \
 #     --NFE "$NFE" \
 #     --seed "$SEED" \
 #     --cfg_guidance "$CFG_GUIDANCE" \
+#     --cfgpp_guidance "$CFGPP_GUIDANCE" \
 #     --concept1 "a girl" \
 #     --concept2 "a boy" \
 #     --base_prompts "a portrait of a person" \

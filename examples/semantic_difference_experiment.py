@@ -117,7 +117,10 @@ def main():
     parser.add_argument("--model", type=str, default='sd15', choices=["sd15", "sd20", "sdxl"])
     parser.add_argument("--NFE", type=int, default=50)
     parser.add_argument("--seed", type=int, default=42)
-    parser.add_argument("--cfg_guidance", type=float, default=7.5)
+    parser.add_argument("--cfg_guidance", type=float, default=7.5,
+                       help="Guidance scale for standard CFG (default: 7.5)")
+    parser.add_argument("--cfgpp_guidance", type=float, default=0.6,
+                       help="Guidance scale for CFG++ (default: 0.6; recommended range ≈ 0.3–1.0)")
     parser.add_argument("--use_cfgpp", action="store_true",
                        help="Use CFG++ sampling instead of standard CFG")
     parser.add_argument("--compare_both", action="store_true",
@@ -200,10 +203,12 @@ def main():
                     methods_to_test = [("CFG++" if args.use_cfgpp else "CFG", args.use_cfgpp)]
                 
                 for method_name, use_cfgpp in methods_to_test:
+                    # Use separate guidance scales for CFG vs CFG++
+                    guidance_scale = args.cfgpp_guidance if use_cfgpp else args.cfg_guidance
                     img = semantic_solver.sample_with_custom_embedding(
                         modified_emb,
                         null_emb,
-                        cfg_guidance=args.cfg_guidance,
+                        cfg_guidance=guidance_scale,
                         use_cfgpp=use_cfgpp,
                         seed=args.seed
                     )
@@ -234,19 +239,20 @@ def main():
             if args.compare_both:
                 # Generate with both methods
                 for method_name, use_cfgpp in [("CFG", False), ("CFG++", True)]:
+                    guidance_scale = args.cfgpp_guidance if use_cfgpp else args.cfg_guidance
                     if use_cfgpp:
                         cfgpp_solver = get_solver("ddim_cfg++", 
                                                  solver_config=solver_config, 
                                                  device=args.device)
                         baseline_img = cfgpp_solver.sample(
                             prompt=[null_prompt, base_prompt],
-                            cfg_guidance=args.cfg_guidance,
+                            cfg_guidance=guidance_scale,
                             callback_fn=None
                         )
                     else:
                         baseline_img = base_solver.sample(
                             prompt=[null_prompt, base_prompt],
-                            cfg_guidance=args.cfg_guidance,
+                            cfg_guidance=guidance_scale,
                             callback_fn=None
                         )
                     baseline_path = results_dir / f"{base_prompt.replace(' ', '_')}_baseline_{method_name.lower()}.png"
@@ -254,18 +260,20 @@ def main():
                     print(f"    Saved baseline ({method_name}): {baseline_path}")
             else:
                 if args.use_cfgpp:
+                    guidance_scale = args.cfgpp_guidance
                     cfgpp_solver = get_solver("ddim_cfg++", 
                                              solver_config=solver_config, 
                                              device=args.device)
                     baseline_img = cfgpp_solver.sample(
                         prompt=[null_prompt, base_prompt],
-                        cfg_guidance=args.cfg_guidance,
+                        cfg_guidance=guidance_scale,
                         callback_fn=None
                     )
                 else:
+                    guidance_scale = args.cfg_guidance
                     baseline_img = base_solver.sample(
                         prompt=[null_prompt, base_prompt],
-                        cfg_guidance=args.cfg_guidance,
+                        cfg_guidance=guidance_scale,
                         callback_fn=None
                     )
                 baseline_path = results_dir / f"{base_prompt.replace(' ', '_')}_baseline.png"

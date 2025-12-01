@@ -48,11 +48,9 @@ run_experiment() {
     local exp_name="$5"
     
     local workdir="${BASE_DIR}/${exp_name}"
-    local guidance=$CFG_GUIDANCE
     local method_flag=""
     
     if [ "$use_cfgpp" = "true" ]; then
-        guidance=$CFGPP_GUIDANCE
         method_flag="--use_cfgpp"
         exp_name="${exp_name}_cfgpp"
         workdir="${BASE_DIR}/${exp_name}"
@@ -63,7 +61,8 @@ run_experiment() {
     echo "  Concept 2: '$concept2'"
     echo "  Base prompts: $base_prompts"
     echo "  Method: $([ "$use_cfgpp" = "true" ] && echo "CFG++" || echo "CFG")"
-    echo "  Guidance: $guidance"
+    echo "  CFG guidance: $CFG_GUIDANCE"
+    echo "  CFG++ guidance: $CFGPP_GUIDANCE"
     echo ""
     
     python -m examples.semantic_difference_experiment \
@@ -72,7 +71,8 @@ run_experiment() {
         --model "$MODEL" \
         --NFE "$NFE" \
         --seed "$SEED" \
-        --cfg_guidance "$guidance" \
+        --cfg_guidance "$CFG_GUIDANCE" \
+        --cfgpp_guidance "$CFGPP_GUIDANCE" \
         --concept1 "$concept1" \
         --concept2 "$concept2" \
         --base_prompts "$base_prompts" \
@@ -106,6 +106,7 @@ run_comparison() {
         --NFE "$NFE" \
         --seed "$SEED" \
         --cfg_guidance "$CFG_GUIDANCE" \
+        --cfgpp_guidance "$CFGPP_GUIDANCE" \
         --concept1 "$concept1" \
         --concept2 "$concept2" \
         --base_prompts "$base_prompts" \

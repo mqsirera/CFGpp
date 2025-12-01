@@ -173,7 +173,10 @@ def main():
     parser.add_argument("--model", type=str, default='sd15', choices=["sd15", "sd20", "sdxl"])
     parser.add_argument("--NFE", type=int, default=50)
     parser.add_argument("--seed", type=int, default=42)
-    parser.add_argument("--cfg_guidance", type=float, default=7.5)
+    parser.add_argument("--cfg_guidance", type=float, default=7.5,
+                       help="Guidance scale for standard CFG (default: 7.5)")
+    parser.add_argument("--cfgpp_guidance", type=float, default=0.6,
+                       help="Guidance scale for CFG++ (default: 0.6; recommended range ≈ 0.3–1.0)")
     parser.add_argument("--use_cfgpp", action="store_true",
                        help="Use CFG++ sampling instead of standard CFG")
     parser.add_argument("--compare_both", action="store_true",
@@ -268,10 +271,12 @@ def main():
                     methods_to_test = [("CFG++" if args.use_cfgpp else "CFG", args.use_cfgpp)]
                 
                 for method_name, use_cfgpp in methods_to_test:
+                    # Use separate guidance scales for CFG vs CFG++
+                    guidance_scale = args.cfgpp_guidance if use_cfgpp else args.cfg_guidance
                     img = interp_solver.sample_with_custom_embedding(
                         interp_emb,
                         null_emb,
-                        cfg_guidance=args.cfg_guidance,
+                        cfg_guidance=guidance_scale,
                         use_cfgpp=use_cfgpp,
                         seed=args.seed
                     )
@@ -312,10 +317,11 @@ def main():
                 methods_to_test = [("CFG++" if args.use_cfgpp else "CFG", args.use_cfgpp)]
             
             for method_name, use_cfgpp in methods_to_test:
+                guidance_scale = args.cfgpp_guidance if use_cfgpp else args.cfg_guidance
                 img = interp_solver.sample_with_custom_embedding(
                     blended_emb,
                     null_emb,
-                    cfg_guidance=args.cfg_guidance,
+                    cfg_guidance=guidance_scale,
                     use_cfgpp=use_cfgpp,
                     seed=args.seed
                 )
@@ -353,10 +359,11 @@ def main():
                 methods_to_test = [("CFG++" if args.use_cfgpp else "CFG", args.use_cfgpp)]
             
             for method_name, use_cfgpp in methods_to_test:
+                guidance_scale = args.cfgpp_guidance if use_cfgpp else args.cfg_guidance
                 img = interp_solver.sample_with_custom_embedding(
                     emb,
                     null_emb,
-                    cfg_guidance=args.cfg_guidance,
+                    cfg_guidance=guidance_scale,
                     use_cfgpp=use_cfgpp,
                     seed=args.seed
                 )

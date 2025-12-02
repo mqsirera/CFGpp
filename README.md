@@ -1,4 +1,4 @@
-## [ICLR2025] CFG++ : MANIFOLD-CONSTRAINED CLASSIFIER FREE GUIDANCE FOR DIFFUSION MODELS
+# FINAL PROJECT: Machine Learning with Small Data
 
 This repository started as the official implementation of  
 **[CFG++: Manifold-constrained Classifier Free Guidance for Diffusion Models](https://arxiv.org/abs/2406.08070)** by  
@@ -8,7 +8,7 @@ We then **adapted the codebase** for the course
 **EECE 7398 – Special Topics: Machine Learning with Small Data**, to:
 
 - Reproduce and evaluate CFG++ against standard classifier-free guidance (CFG)
-- Design and run additional experiments (semantic differences, interpolation, timestep conditioning)
+- Design and run additional experiments (semantic differences, interpolation, timestep conditioning, trajectory analysis)
 - Produce structured results and plots for analysis
 
 ![main figure](assets/main_test_v5.png)
@@ -34,6 +34,7 @@ We then **adapted the codebase** for the course
     - Semantic difference in embedding space (original contribution)
     - Prompt interpolation (linear, SLERP, multi-blend)
     - Timestep-dependent prompt conditioning
+    - Trajectory stability analysis
 
 ---
 
@@ -41,10 +42,14 @@ We then **adapted the codebase** for the course
 
 We use the original environment from the CFG++ paper.
 
+```bash
 git clone https://github.com/CFGpp-diffusion/CFGpp.git
 cd CFGpp
 conda env create -f environment.yaml
-conda activate cfgpp   # or your chosen env nameDiffusers will automatically download checkpoints for SD v1.5 or SDXL. SDXL-Lightning is also supported for fast sampling.
+conda activate cfgpp   # or your chosen env name
+```
+
+Diffusers will automatically download checkpoints for SD v1.5 or SDXL. SDXL-Lightning is also supported for fast sampling.
 
 ---
 
@@ -54,37 +59,57 @@ conda activate cfgpp   # or your chosen env nameDiffusers will automatically dow
 
 **CFG (baseline):**
 
+```bash
 python -m examples.text_to_img \
   --prompt "a portrait of a dog" \
   --method "ddim" \
-  --cfg_guidance 7.5**CFG++ (recommended):**
+  --cfg_guidance 7.5
+```
 
+**CFG++ (recommended):**
+
+```bash
 python -m examples.text_to_img \
   --prompt "a portrait of a dog" \
   --method "ddim_cfg++" \
-  --cfg_guidance 0.6### SDXL-Lightning + CFG++
+  --cfg_guidance 0.6
+```
 
-1. Download `sdxl_lightning_4step_unet.safetensors` into `ckpt/` (from ByteDance SDXL-Lightning).
+### SDXL-Lightning + CFG++
+
+1. Download `sdxl_lightning_4step_unet.safetensors` into `ckpt/` (from [ByteDance SDXL-Lightning](https://huggingface.co/ByteDance/SDXL-Lightning/tree/main)).
 2. Run:
 
+```bash
 python -m examples.text_to_img \
   --prompt "stars, water, brilliantly, gorgeous large scale scene, a little girl, in the style of dreamy realism, light gold and amber, blue and pink, brilliantly illuminated in the background." \
   --method "ddim_cfg++_lightning" \
   --model "sdxl_lightning" \
   --cfg_guidance 1.0 \
-  --NFE 4### Image Inversion (DDIM Inversion)
+  --NFE 4
+```
+
+### Image Inversion (DDIM Inversion)
 
 **CFG:**
 
+```bash
 python -m examples.inversion \
   --prompt "a photograph of baby fox" \
   --method "ddim_inversion" \
-  --cfg_guidance 7.5**CFG++:**
+  --cfg_guidance 7.5
+```
 
+**CFG++:**
+
+```bash
 python -m examples.inversion \
   --prompt "a photograph of baby fox" \
   --method "ddim_inversion_cfg++" \
-  --cfg_guidance 0.6Add `--model sdxl` to switch to SDXL.
+  --cfg_guidance 0.6
+```
+
+Add `--model sdxl` to switch to SDXL.
 
 ---
 
@@ -101,16 +126,24 @@ Systematically compare CFG vs CFG++ across prompts and guidance scales, producin
 
 **Example: default prompts**
 
+```bash
 python -m examples.evaluate_cfg_comparison \
   --workdir examples/workdir/evaluation \
   --NFE 50 \
-  --seed 42**Example: custom prompts**
+  --seed 42
+```
 
+**Example: custom prompts**
+
+```bash
 python -m examples.evaluate_cfg_comparison \
   --workdir examples/workdir/evaluation \
   --prompts_file examples/sample_prompts.json \
   --cfg_scales 1.0 2.5 5.0 7.5 10.0 \
-  --cfgpp_scales 0.1 0.3 0.5 0.7 1.0**Output:**
+  --cfgpp_scales 0.1 0.3 0.5 0.7 1.0
+```
+
+**Output:**
 
 - Individual images for each (prompt, method, scale)
 - Per-prompt comparison grids
@@ -118,35 +151,44 @@ python -m examples.evaluate_cfg_comparison \
 
 **Plotting 2-row figures (CFG top, CFG++ bottom):**
 
+```bash
 python -m examples.plot_evaluation_figure \
-  --workdir examples/workdir/evaluation---
+  --workdir examples/workdir/evaluation
+```
+
+---
 
 ### 2. Semantic Difference Experiment (Original Contribution)
 
 **File:** `examples/semantic_difference_experiment.py`
 
 **Purpose:**  
-Test whether **semantic differences in text embeddings** (e.g. “a girl” → “a boy”) translate into controllable changes in generated identity when applied to a base prompt.
+Test whether **semantic differences in text embeddings** (e.g. "a girl" → "a boy") translate into controllable changes in generated identity when applied to a base prompt.
 
 **Concept:**
 
 1. Compute embeddings for concepts, e.g. `"a girl"` and `"a boy"`.
 2. Difference:  
-   \(\text{diff} = \text{emb}("a boy") - \text{emb}("a girl")\).
+   \(\text{diff} = \text{emb}("a boy") - \text{emb}("a girl")\)
 3. Apply to base prompt:  
-   \(\text{emb}_\text{mod} = \text{emb}("a portrait of a person") + \alpha \cdot \text{diff}\) for multiple strengths \(\alpha\).
+   \(\text{emb}_\text{mod} = \text{emb}("a portrait of a person") + \alpha \cdot \text{diff}\) for multiple strengths \(\alpha\)
 4. Generate images with CFG or CFG++ and compare.
 
 **Example: basic experiment (CFG only)**
 
+```bash
 python -m examples.semantic_difference_experiment \
   --workdir examples/workdir/semantic_diff/emotion_portrait \
   --concept1 "a happy person" \
   --concept2 "a sad person" \
   --base_prompts "a portrait of a person" \
   --strengths -1.0 -0.5 0.0 0.5 1.0 \
-  --cfg_guidance 7.5**Example: CFG vs CFG++ comparison**
+  --cfg_guidance 7.5
+```
 
+**Example: CFG vs CFG++ comparison**
+
+```bash
 python -m examples.semantic_difference_experiment \
   --workdir examples/workdir/semantic_diff/emotion_cfg_vs_cfgpp_comparison \
   --concept1 "a happy person" \
@@ -155,7 +197,10 @@ python -m examples.semantic_difference_experiment \
   --strengths -1.0 0.0 1.0 \
   --compare_both \
   --cfg_guidance 7.5 \
-  --cfgpp_guidance 0.6**Output:**
+  --cfgpp_guidance 0.6
+```
+
+**Output:**
 
 - Images for each base prompt and semantic strength
 - Baseline (unmodified prompt) images
@@ -164,13 +209,17 @@ python -m examples.semantic_difference_experiment \
 
 **Plotting baseline + concepts + strengths (comparison or single-method):**
 
+```bash
 # Comparison experiment
 python -m examples.plot_semantic_diff_figure \
   --workdir examples/workdir/semantic_diff/emotion_cfg_vs_cfgpp_comparison
 
 # Non-comparison experiment
 python -m examples.plot_semantic_diff_figure \
-  --workdir examples/workdir/semantic_diff/emotion_portrait---
+  --workdir examples/workdir/semantic_diff/emotion_portrait
+```
+
+---
 
 ### 3. Prompt Interpolation Experiments
 
@@ -183,14 +232,15 @@ Examine how the model behaves as we **move continuously between prompts** in emb
 
 1. Get embeddings for prompts such as `"a cat"` and `"a dog"`.
 2. Interpolate:
-   - **Linear (LERP)**: straight line in embedding space.
-   - **SLERP**: spherical interpolation on the unit hypersphere (better magnitude preservation, smoother semantics).
-   - **Multi-blend**: weighted combination of 3+ prompts.
-3. Generate images along the path for a grid of interpolation factors \(\alpha\).
-4. Optionally generate both CFG and CFG++ images for each \(\alpha\).
+   - **Linear (LERP)**: straight line in embedding space
+   - **SLERP**: spherical interpolation on the unit hypersphere (better magnitude preservation, smoother semantics)
+   - **Multi-blend**: weighted combination of 3+ prompts
+3. Generate images along the path for a grid of interpolation factors \(\alpha\)
+4. Optionally generate both CFG and CFG++ images for each \(\alpha\)
 
 **Examples:**
 
+```bash
 # Linear interpolation (CFG vs CFG++)
 python -m examples.prompt_interpolation_experiment \
   --workdir examples/workdir/interpolation/interpolation_cat_to_dog_linear \
@@ -219,7 +269,10 @@ python -m examples.prompt_interpolation_experiment \
   --weights 0.4 0.4 0.2 \
   --compare_both \
   --cfg_guidance 7.5 \
-  --cfgpp_guidance 0.6**Output:**
+  --cfgpp_guidance 0.6
+```
+
+**Output:**
 
 - Reference images for each prompt
 - Interpolated images for each \(\alpha\)
@@ -227,8 +280,12 @@ python -m examples.prompt_interpolation_experiment \
 
 **Plotting 2-row interpolation figures:**
 
+```bash
 python -m examples.plot_interpolation_figure \
-  --workdir examples/workdir/interpolation/interpolation_cat_to_dog_linearThis produces a figure with CFG in the top row and CFG++ in the bottom row, ordered by \(\alpha\).
+  --workdir examples/workdir/interpolation/interpolation_cat_to_dog_linear
+```
+
+This produces a figure with CFG in the top row and CFG++ in the bottom row, ordered by \(\alpha\).
 
 ---
 
@@ -242,16 +299,17 @@ Investigate what happens when **prompts or prompt weights change over diffusion 
 **Concept:**
 
 - **Progressive refinement:**  
-  Start with a simple prompt, gradually switch to a more detailed one (structure first, then details).
+  Start with a simple prompt, gradually switch to a more detailed one (structure first, then details)
 - **Style-content separation:**  
-  Keep a content prompt fixed while increasing weight on a style prompt.
+  Keep a content prompt fixed while increasing weight on a style prompt
 - **Multi-prompt schedules:**  
-  Move between several prompts over time (e.g., cat → dog → bird).
+  Move between several prompts over time (e.g., cat → dog → bird)
 - **Negative schedules:**  
-  Gradually increase negative prompt strength to push out undesirable artifacts.
+  Gradually increase negative prompt strength to push out undesirable artifacts
 
 **Examples:**
 
+```bash
 # Progressive refinement (CFG vs CFG++)
 python -m examples.timestep_conditioning_experiment \
   --workdir examples/workdir/timestep/person_progressive \
@@ -274,11 +332,79 @@ python -m examples.timestep_conditioning_experiment \
   --content_weight_end 0.3 \
   --compare_both \
   --cfg_guidance 7.5 \
-  --cfgpp_guidance 0.6**Output:**
+  --cfgpp_guidance 0.6
+```
+
+**Output:**
 
 - Images generated with timestep-dependent conditioning
 - Baseline (constant prompt) images for comparison
 - `timestep_conditioning_summary.json` with schedule configuration
+
+---
+
+### 5. Trajectory Stability Analysis
+
+**File:** `examples/evaluate_trajectory.py` and `examples/plot_trajectory.py`
+
+**Purpose:**  
+Validate the core claim of the CFG++ paper: that **manifold-constrained guidance** produces a more numerically stable and smoother reverse diffusion trajectory than standard CFG, especially under high guidance force.
+
+**Concept:**
+
+This experiment compares the **reverse diffusion trajectories** of CFG vs CFG++ by:
+
+1. Computing **score matching loss** at each timestep to measure trajectory stability
+2. Visualizing intermediate denoised estimates \(\hat{x}_0\) at key timesteps
+3. Comparing the smoothness and stability of both methods
+
+**Expected Results:**
+
+- **CFG (high guidance scale)**: Sharp spikes in loss, high volatility, visual artifacts (color explosions, abrupt pattern jumps)
+- **CFG++ (low guidance scale)**: Smooth loss trajectory, low variance, gradual detail emergence
+
+**Prerequisites:**
+
+Before running, ensure your solver files expose the directional vector. Inside DDIM and DDIM_CFG++ sampling loops, ensure this is passed:
+
+```python
+callback_kwargs = { ..., "noise_diff": noise_diff.detach() }
+```
+
+**Running the experiment:**
+
+```bash
+python -m examples.evaluate_trajectory \
+  --model sd15 \
+  --prompt "An intricate, highly detailed render of a large, antique brass clock mechanism completely overgrown with vibrant, rare luminescent blue moss and tiny dew-covered orchid blossoms. The entire clockwork structure is suspended inside a perfect, transparent glass sphere filled with swirling, smoky white vapor. Include strong, directional volumetric light cutting through the vapor, casting sharp shadows on the brass. UHD, photorealistic, cinematic lighting." \
+  --NFE 50 \
+  --workdir examples/workdir/trajectory_botanical_clock
+```
+
+**Key Parameters:**
+
+| Parameter | Value | Description |
+|----------|-------|-------------|
+| `--NFE` | 50 | Number of diffusion steps |
+| CFG Test | DDIM (ω = 7.5) | High-extrapolation guidance (unstable) |
+| CFG++ Test | DDIM_CFG++ (λ = 0.6) | Manifold-constrained guidance (stable) |
+
+**Generating plots:**
+
+```bash
+python -m examples.plot_trajectory \
+  --workdir examples/workdir/trajectory_botanical_clock
+```
+
+**Output:**
+
+- `score_matching_loss_plot.png`: Quantitative comparison showing loss spikes (CFG) vs smooth trajectory (CFG++)
+- `trajectory_montage.png`: Visual comparison of denoised estimates \(\hat{x}_0\) at different timesteps
+
+**Interpretation:**
+
+- **Score Matching Loss Plot**: CFG shows sharp spikes and high volatility (off-manifold drift), while CFG++ shows a smooth, stable trajectory
+- **Trajectory Montage**: CFG exhibits color explosions, abrupt pattern jumps, and pixelated artifacts, while CFG++ shows smooth transitions and gradual detail emergence
 
 ---
 
@@ -291,10 +417,14 @@ Several helper scripts run sets of experiments:
 - `examples/run_new_experiments.sh`
 - `examples/run_new_experiments_quick.sh`
 
-Example:
+**Example:**
 
+```bash
 ./examples/run_semantic_experiments.sh
-./examples/run_new_experiments.shThese populate `examples/workdir/...` with consistent CFG vs CFG++ experiments ready to be plotted.
+./examples/run_new_experiments.sh
+```
+
+These populate `examples/workdir/...` with consistent CFG vs CFG++ experiments ready to be plotted.
 
 ---
 
@@ -303,7 +433,8 @@ Example:
 If you use this repository or its experiments, please cite:
 
 **CFG++ (base method):**
-tex
+
+```bibtex
 @inproceedings{
   chung2025cfg,
   title={{CFG}++: Manifold-constrained Classifier Free Guidance for Diffusion Models},
@@ -311,11 +442,18 @@ tex
   booktitle={The Thirteenth International Conference on Learning Representations},
   year={2025},
   url={https://openreview.net/forum?id=E77uvbOTtp}
-}**Original Classifier-Free Guidance (CFG):**
-tex
+}
+```
+
+**Original Classifier-Free Guidance (CFG):**
+
+```bibtex
 @article{ho2022classifierfree,
-  title        = {Classifier-Free Diffusion Guidance},
-  author       = {Ho, Jonathan and Salimans, Tim},
-  journal      = {arXiv preprint arXiv:2207.12598},
-  year         = {2022}
-}This fork builds directly on the official CFG++ implementation and extends it with course-specific experiments and plotting tools for **EECE 7398 – Special Topics: Machine Learning with Small Data**.
+  title={Classifier-Free Diffusion Guidance},
+  author={Ho, Jonathan and Salimans, Tim},
+  journal={arXiv preprint arXiv:2207.12598},
+  year={2022}
+}
+```
+
+This fork builds directly on the official CFG++ implementation and extends it with course-specific experiments and plotting tools for **EECE 7398 – Special Topics: Machine Learning with Small Data**.

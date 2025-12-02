@@ -6,7 +6,6 @@ that **manifold-constrained guidance** produces a more numerically stable and sm
 The experiment generates two key outputs for comparative analysis:
 
 - **Quantitative Data**: Score Matching Loss plot  
-  \( \\lVert \\hat{\\epsilon}_c - \\hat{\\epsilon}_{\\emptyset} \\rVert^2 \) over time.
 - **Visual Data**: A Trajectory Montage grid showing the denoising evolution.
 
 ---

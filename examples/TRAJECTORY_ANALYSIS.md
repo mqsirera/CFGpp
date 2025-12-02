@@ -28,8 +28,8 @@ callback_kwargs = { ..., "noise_diff": noise_diff.detach() }
 
 This script executes the diffusion process for:
 
-- **CFG** (ω = 7.5) — extrapolating, unstable  
-- **CFG++** (λ = 0.6) — interpolating, stable
+- **CFG** (ω = 12.5) — extrapolating, unstable  
+- **CFG++** (λ = 1.0) — interpolating, stable
 
 All intermediate steps and loss data are saved to `--workdir`.
 

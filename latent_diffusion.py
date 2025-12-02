@@ -279,16 +279,21 @@ class BaseDDIM(StableDiffusion):
                 noise_uc, noise_c = self.predict_noise(zt, t, uc, c)
                 noise_pred = noise_uc + cfg_guidance * (noise_c - noise_uc)
 
+                # newline
+                noise_diff = noise_c - noise_uc
+
             # tweedie
             z0t = (zt - (1-at).sqrt() * noise_pred) / at.sqrt()
 
-            # add noise
+            # ADDED
             zt = at_prev.sqrt() * z0t + (1-at_prev).sqrt() * noise_pred
 
             if callback_fn is not None:
                 callback_kwargs = {'z0t': z0t.detach(),
                                     'zt': zt.detach(),
-                                    'decode': self.decode}
+                                    'decode': self.decode,
+                                    # --- ADDED: Pass the difference vector ---
+                                    'noise_diff': noise_diff.detach()}
                 callback_kwargs = callback_fn(step, t, callback_kwargs)
                 z0t = callback_kwargs["z0t"]
                 zt = callback_kwargs["zt"]
@@ -659,6 +664,9 @@ class BaseDDIMCFGpp(StableDiffusion):
                 noise_uc, noise_c = self.predict_noise(zt, t, uc, c)
                 noise_pred = noise_uc + cfg_guidance * (noise_c - noise_uc)
 
+                # ADDED
+                noise_diff = noise_c - noise_uc
+
             # tweedie
             z0t = (zt - (1-at).sqrt() * noise_pred) / at.sqrt()
 
@@ -668,7 +676,9 @@ class BaseDDIMCFGpp(StableDiffusion):
             if callback_fn is not None:
                 callback_kwargs = {'z0t': z0t.detach(),
                                     'zt': zt.detach(),
-                                    'decode': self.decode}
+                                    'decode': self.decode,
+                                    # ADDED
+                                    'noise_diff': noise_diff.detach()}
                 callback_kwargs = callback_fn(step, t, callback_kwargs)
                 z0t = callback_kwargs["z0t"]
                 zt = callback_kwargs["zt"]

@@ -56,14 +56,14 @@ python -m examples.evaluate_trajectory     --model sd15     --prompt "An intrica
 
 ---
 
-## 3. Generating the Plots (`plot_results.py`)
+## 3. Generating the Plots (`plot_trajectory.py`)
 
 Run the plotter to generate final visualizations.
 
 ### Command
 
 ```bash
-python -m examples.plot_results     --workdir examples/results/trajectory_EXP_NAME
+python -m examples.plot_trajectory     --workdir examples/results/trajectory_EXP_NAME
 ```
 
 ### Output Files
@@ -78,14 +78,6 @@ The following files will appear inside the workdir:
 ## 4. Interpretation of Results
 
 ### A. Score Matching Loss Plot (Quantitative)
-
-This plot shows:
-
-\[
-\| \hat{\epsilon}_c - \hat{\epsilon}_{\emptyset} \|^2
-\]
-
-over diffusion timestep **t**.
 
 #### Expected Outcomes
 
@@ -118,10 +110,3 @@ This montage compares the denoised estimate \( \hat{x}_0 \) at specific timestep
   - Gradual detail emergence  
   - Cleaner structure  
   - Matches the smooth loss curve
-
----
-
-## Summary
-
-This experiment empirically demonstrates that **CFG++ produces more stable guidance** than classical CFG—  
-both **numerically** (loss curve) and **visually** (denoising trajectory).

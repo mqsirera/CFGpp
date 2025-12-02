@@ -5,7 +5,7 @@ This repository started as the official implementation of
 [Hyungjin Chung*](https://www.hj-chung.com/), [Jeongsol Kim*](https://jeongsol.dev/), [Geon Yeong Park*](https://geonyeong-park.github.io/), [Hyelin Nam*](https://www.linkedin.com/in/hyelin-nam-01ab631a3/), [Jong Chul Ye](https://bispl.weebly.com/professor.html).
 
 We then **adapted the codebase** for the course  
-**EECE 7398 – Special Topics: Machine Learning with Small Data**, to:
+**EECE 7398 – Special Topics: Machine Learning with Small Data** by Mariona Jaramillo Civill and Miquel Sirera Perelló, PhD students at Northeastern University, to:
 
 - Reproduce and evaluate CFG++ against standard classifier-free guidance (CFG)
 - Design and run additional experiments (semantic differences, interpolation, timestep conditioning, trajectory analysis)
@@ -457,3 +457,5 @@ If you use this repository or its experiments, please cite:
 ```
 
 This fork builds directly on the official CFG++ implementation and extends it with course-specific experiments and plotting tools for **EECE 7398 – Special Topics: Machine Learning with Small Data**.
+
+**Modifications by:** Mariona Jaramillo Civill and Miquel Sirera Perelló, PhD students at Northeastern University.

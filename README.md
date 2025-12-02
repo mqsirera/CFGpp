@@ -1,119 +1,321 @@
-# [ICLR2025] CFG++ : MANIFOLD-CONSTRAINED CLASSIFIER FREE GUIDANCE FOR DIFFUSION MODELS
+## [ICLR2025] CFG++ : MANIFOLD-CONSTRAINED CLASSIFIER FREE GUIDANCE FOR DIFFUSION MODELS
 
-This repository is the official implementation of [CFG++: Manifold-constrained Classifier Free Guidance for Diffusion Models](https://arxiv.org/abs/2406.08070v1), led by
+This repository started as the official implementation of  
+**[CFG++: Manifold-constrained Classifier Free Guidance for Diffusion Models](https://arxiv.org/abs/2406.08070)** by  
+[Hyungjin Chung*](https://www.hj-chung.com/), [Jeongsol Kim*](https://jeongsol.dev/), [Geon Yeong Park*](https://geonyeong-park.github.io/), [Hyelin Nam*](https://www.linkedin.com/in/hyelin-nam-01ab631a3/), [Jong Chul Ye](https://bispl.weebly.com/professor.html).
 
-[Hyungjin Chung*](https://www.hj-chung.com/), [Jeongsol Kim*](https://jeongsol.dev/), [Geon Yeong Park*](https://geonyeong-park.github.io/), [Hyelin Nam*](https://www.linkedin.com/in/hyelin-nam-01ab631a3/), [Jong Chul Ye](https://bispl.weebly.com/professor.html)
+We then **adapted the codebase** for the course  
+**EECE 7398 – Special Topics: Machine Learning with Small Data**, to:
+
+- Reproduce and evaluate CFG++ against standard classifier-free guidance (CFG)
+- Design and run additional experiments (semantic differences, interpolation, timestep conditioning)
+- Produce structured results and plots for analysis
 
 ![main figure](assets/main_test_v5.png)
 
-[![Project Website](https://img.shields.io/badge/Project-Website-blue)](https://cfgpp-diffusion.github.io/)
-[![arXiv](https://img.shields.io/badge/arXiv-2311.18608-b31b1b.svg)](https://arxiv.org/abs/2406.08070)
+[![Project Website](https://img.shields.io/badge/Project-Website-blue)](https://cfgpp-diffusion.github.io/)  
+[![arXiv](https://img.shields.io/badge/arXiv-2406.08070-b31b1b.svg)](https://arxiv.org/abs/2406.08070)
 
 ---
-## 🔥 Summary
 
-*Classifier-free guidance (CFG)* is a fundamental tool in modern diffusion models for text-guided generation. Although effective, CFG requires high guidance scales, which has notable drawbacks:
+## Quick Summary: CFG, CFG++, and This Fork
 
-1. **Mode collapse** and saturation
-2. **Poor invertibility**
-3. **Unnatural, curved PF-ODE trajectory**
+- **Classifier-Free Guidance (CFG)** (Ho & Salimans, 2022) guides diffusion models by linearly combining unconditional and conditional scores. It works well, but typically needs **large guidance scales** (e.g. 7.5–12.5), which can cause mode collapse, off-manifold trajectories, and poor invertibility.
 
-We propose a simple fix to this seemingly inherent limitation and propose **CFG++** 🚀, which corrects the off-manifold problem of CFG. The following advantages are observed
+- **CFG++** is a simple modification that **keeps the reverse trajectory closer to the data manifold**, allowing:
+  - **Small guidance scales** \(\lambda \in [0, 1]\) with effects comparable to large CFG scales
+  - Better sample quality and text adherence
+  - Smoother, straighter trajectories and improved invertibility
 
-1. **Small guidance scale** $\lambda \in$ [0, 1] can be used with a similar effect as $\omega \in$ [1.0, 12.5] in CFG
-2. **Better sample quality** and better adherence to text
-3. **Smooth, straighter** PF-ODE trajectory
-4. **Enhanced invertibility**
+- **This repository**:
+  - Keeps the original CFG++ text-to-image and inversion scripts
+  - Adds new experimental scripts and plotting utilities for:
+    - CFG vs CFG++ evaluation
+    - Semantic difference in embedding space (original contribution)
+    - Prompt interpolation (linear, SLERP, multi-blend)
+    - Timestep-dependent prompt conditioning
 
-Experimental results confirm that our method significantly enhances performance in **text-to-image generation, DDIM inversion, editing, and solving inverse problems**, suggesting a wide-ranging impact and potential applications in various fields that utilize text guidance.
-
-## 🗓 ️News
-- [20 Jul 2024] 🚨[Stable Diffusion WebUI reForge](https://github.com/Panchovix/stable-diffusion-webui-reForge) now supports CFG++. Thanks to the awesome work! Please checkout the [Reddit discussion](https://www.reddit.com/r/StableDiffusion/comments/1e7enng/reforge_updates_new_samplers_new_scheduler_more/) for more details.
-- [22 Jun 2024] 🚨[ComfyUI](https://openart.ai/workflows/dugumatai/new-sampler-euler_cfg/oGP4a011iYE2UpeTtXNH) now supports CFG++. Thanks to the awesome work of [@dugumatai](https://openart.ai/workflows/profile/dugumatai?sort=latest) and [@NotEvilGirl](https://gitea.com/NotEvilGirl/cfgpp)! We *strongly* encourage to test this workflow as CFG++ may improve the sampling with student models, e.g. SDXL-lightning, to a significant extent. 
-  - For more details, please check out the [Reddit discussion](https://www.reddit.com/r/StableDiffusion/comments/1dohy20/quick_overview_of_some_newish_stuff_in_comfyui/) and [Youtube video](https://www.youtube.com/watch?v=-GXJDz8i-Wo).
-- [12 Jun 2024] Code and paper are uploaded.
+---
 
 ## 🛠️ Setup
-First, create your environment. We recommend using the following comments. 
 
-```
+We use the original environment from the CFG++ paper.
+
 git clone https://github.com/CFGpp-diffusion/CFGpp.git
 cd CFGpp
 conda env create -f environment.yaml
-```
+conda activate cfgpp   # or your chosen env nameDiffusers will automatically download checkpoints for SD v1.5 or SDXL. SDXL-Lightning is also supported for fast sampling.
 
-For reproducibility, using the same package version is necessary since some dependencies lead to significant differences (for instance, diffusers). Nonetheless, improvement induced by CFG++ will be observed regardless the dependency.
+---
 
-Diffusers will automatically download checkpoints for SDv1.5 or SDXL. For the fast sampling, we also support SDXL-lightning. See T2I examples below. 
+## Original Usage: Text-to-Image and Inversion
 
+### Text-to-Image
 
-## 🌄 Examples
+**CFG (baseline):**
 
-### Text-to-Image generation
+python -m examples.text_to_img \
+  --prompt "a portrait of a dog" \
+  --method "ddim" \
+  --cfg_guidance 7.5**CFG++ (recommended):**
 
-- CFG
-```
-python -m examples.text_to_img --prompt "a portrait of a dog" --method "ddim" --cfg_guidance 7.5
-```
+python -m examples.text_to_img \
+  --prompt "a portrait of a dog" \
+  --method "ddim_cfg++" \
+  --cfg_guidance 0.6### SDXL-Lightning + CFG++
 
-- CFG++
-We support DDIM CFG++ (ddim_cfg++) and DPM++ 2M CFG++ (dpm++_2m_cfgpp) at this moment. Please refer to [Auto1111 reForge](https://github.com/Panchovix/stable-diffusion-webui-reForge/blob/main/ldm_patched/k_diffusion/sampling.py#L1161) and [ComfyUI](https://openart.ai/workflows/dugumatai/new-sampler-euler_cfg/oGP4a011iYE2UpeTtXNH) for the other samplers, e.g. Euler-a CFG++, DPM++ SDE CFG++, etc.
-```
-python -m examples.text_to_img --prompt "a portrait of a dog" --method "ddim_cfg++" --cfg_guidance 0.6 
-```
+1. Download `sdxl_lightning_4step_unet.safetensors` into `ckpt/` (from ByteDance SDXL-Lightning).
+2. Run:
 
-- CFG++ (SDXL-lightning)
+python -m examples.text_to_img \
+  --prompt "stars, water, brilliantly, gorgeous large scale scene, a little girl, in the style of dreamy realism, light gold and amber, blue and pink, brilliantly illuminated in the background." \
+  --method "ddim_cfg++_lightning" \
+  --model "sdxl_lightning" \
+  --cfg_guidance 1.0 \
+  --NFE 4### Image Inversion (DDIM Inversion)
 
-First, download [sdxl_lightning_4step_unet.safetensors](https://huggingface.co/ByteDance/SDXL-Lightning/tree/main) in ```ckpt```. Then run the test below. 
+**CFG:**
 
-```
-python -m examples.text_to_img --prompt "stars, water, brilliantly, gorgeous large scale scene, a little girl, in the style of dreamy realism, light gold and amber, blue and pink, brilliantly illuminated in the background." --method "ddim_cfg++_lightning" --model "sdxl_lightning" --cfg_guidance 1 --NFE 4
-```
-  - You can test other NFEs with different safetensors (e.g., 8step_unet). Make sure to modify the ```--NFE``` accordingly. 
+python -m examples.inversion \
+  --prompt "a photograph of baby fox" \
+  --method "ddim_inversion" \
+  --cfg_guidance 7.5**CFG++:**
 
-  - SDXL-lightning already distilled the score with pre-fixed CFG scale. Therefore, we set ```--cfg_guidance 1```. That said, the key difference lies in the renoising step.
+python -m examples.inversion \
+  --prompt "a photograph of baby fox" \
+  --method "ddim_inversion_cfg++" \
+  --cfg_guidance 0.6Add `--model sdxl` to switch to SDXL.
 
-  - For the Lightning with original DDIM, run above with ```--method "ddim_lightning"```
+---
 
+## New Experiments for EECE 7398
 
-### Image Inversion
+This section describes the additional experiments we implemented on top of the original CFG++ code.
 
-- CFG
-```
-python -m examples.inversion --prompt "a photography of baby fox" --method "ddim_inversion" --cfg_guidance 7.5
-```
+### 1. CFG vs CFG++ Evaluation
 
-- CFG++
-```
-python -m examples.inversion --prompt "a photography of baby fox" --method "ddim_inversion_cfg++" --cfg_guidance 0.6
-```
+**File:** `examples/evaluate_cfg_comparison.py`
 
-> [!tip]
-> If you want to use SDXL, add ``--model sdxl``.
+**Purpose:**  
+Systematically compare CFG vs CFG++ across prompts and guidance scales, producing both images and a JSON summary.
 
-## 🔬 Callback
+**Example: default prompts**
 
-We provide callback functionality to monitor intermediate samples during the diffusion reverse process. For now, the function could be called only at the end of each timestep, for the readability of scripts.
+python -m examples.evaluate_cfg_comparison \
+  --workdir examples/workdir/evaluation \
+  --NFE 50 \
+  --seed 42**Example: custom prompts**
 
-Currently, we provide two options (default: None).
-- draw_tweedie : save $\hat x_{0|t}$ to workdir
-- draw_noisy : save $x_t$ to workdir
+python -m examples.evaluate_cfg_comparison \
+  --workdir examples/workdir/evaluation \
+  --prompts_file examples/sample_prompts.json \
+  --cfg_scales 1.0 2.5 5.0 7.5 10.0 \
+  --cfgpp_scales 0.1 0.3 0.5 0.7 1.0**Output:**
 
-Note that using callback may take more time due to file save. You can refer utils/callback_util.py for details.
+- Individual images for each (prompt, method, scale)
+- Per-prompt comparison grids
+- `evaluation_summary.json` with all metadata
 
-## 📝 Citation
-If you find our method useful, please cite as below or leave a star to this repository.
+**Plotting 2-row figures (CFG top, CFG++ bottom):**
 
-```
+python -m examples.plot_evaluation_figure \
+  --workdir examples/workdir/evaluation---
+
+### 2. Semantic Difference Experiment (Original Contribution)
+
+**File:** `examples/semantic_difference_experiment.py`
+
+**Purpose:**  
+Test whether **semantic differences in text embeddings** (e.g. “a girl” → “a boy”) translate into controllable changes in generated identity when applied to a base prompt.
+
+**Concept:**
+
+1. Compute embeddings for concepts, e.g. `"a girl"` and `"a boy"`.
+2. Difference:  
+   \(\text{diff} = \text{emb}("a boy") - \text{emb}("a girl")\).
+3. Apply to base prompt:  
+   \(\text{emb}_\text{mod} = \text{emb}("a portrait of a person") + \alpha \cdot \text{diff}\) for multiple strengths \(\alpha\).
+4. Generate images with CFG or CFG++ and compare.
+
+**Example: basic experiment (CFG only)**
+
+python -m examples.semantic_difference_experiment \
+  --workdir examples/workdir/semantic_diff/emotion_portrait \
+  --concept1 "a happy person" \
+  --concept2 "a sad person" \
+  --base_prompts "a portrait of a person" \
+  --strengths -1.0 -0.5 0.0 0.5 1.0 \
+  --cfg_guidance 7.5**Example: CFG vs CFG++ comparison**
+
+python -m examples.semantic_difference_experiment \
+  --workdir examples/workdir/semantic_diff/emotion_cfg_vs_cfgpp_comparison \
+  --concept1 "a happy person" \
+  --concept2 "a sad person" \
+  --base_prompts "a portrait of a person" \
+  --strengths -1.0 0.0 1.0 \
+  --compare_both \
+  --cfg_guidance 7.5 \
+  --cfgpp_guidance 0.6**Output:**
+
+- Images for each base prompt and semantic strength
+- Baseline (unmodified prompt) images
+- Reference images for each concept
+- Comparison grids per base prompt
+
+**Plotting baseline + concepts + strengths (comparison or single-method):**
+
+# Comparison experiment
+python -m examples.plot_semantic_diff_figure \
+  --workdir examples/workdir/semantic_diff/emotion_cfg_vs_cfgpp_comparison
+
+# Non-comparison experiment
+python -m examples.plot_semantic_diff_figure \
+  --workdir examples/workdir/semantic_diff/emotion_portrait---
+
+### 3. Prompt Interpolation Experiments
+
+**File:** `examples/prompt_interpolation_experiment.py`
+
+**Purpose:**  
+Examine how the model behaves as we **move continuously between prompts** in embedding space, with linear interpolation, SLERP, and multi-prompt blending. Compare CFG vs CFG++ on the same interpolated embeddings.
+
+**Concept:**
+
+1. Get embeddings for prompts such as `"a cat"` and `"a dog"`.
+2. Interpolate:
+   - **Linear (LERP)**: straight line in embedding space.
+   - **SLERP**: spherical interpolation on the unit hypersphere (better magnitude preservation, smoother semantics).
+   - **Multi-blend**: weighted combination of 3+ prompts.
+3. Generate images along the path for a grid of interpolation factors \(\alpha\).
+4. Optionally generate both CFG and CFG++ images for each \(\alpha\).
+
+**Examples:**
+
+# Linear interpolation (CFG vs CFG++)
+python -m examples.prompt_interpolation_experiment \
+  --workdir examples/workdir/interpolation/interpolation_cat_to_dog_linear \
+  --prompts "a cat" "a dog" \
+  --interpolation_method linear \
+  --interpolation_steps 10 \
+  --compare_both \
+  --cfg_guidance 7.5 \
+  --cfgpp_guidance 0.6
+
+# SLERP interpolation (smoother transitions)
+python -m examples.prompt_interpolation_experiment \
+  --workdir examples/workdir/interpolation/interpolation_cat_to_dog_slerp \
+  --prompts "a cat" "a dog" \
+  --interpolation_method slerp \
+  --interpolation_steps 15 \
+  --compare_both \
+  --cfg_guidance 7.5 \
+  --cfgpp_guidance 0.6
+
+# Multi-prompt blending (e.g., cat, dog, bird)
+python -m examples.prompt_interpolation_experiment \
+  --workdir examples/workdir/interpolation/interpolation_animals_blend \
+  --prompts "a cat" "a dog" "a bird" \
+  --interpolation_method multi_blend \
+  --weights 0.4 0.4 0.2 \
+  --compare_both \
+  --cfg_guidance 7.5 \
+  --cfgpp_guidance 0.6**Output:**
+
+- Reference images for each prompt
+- Interpolated images for each \(\alpha\)
+- `interpolation_summary.json` with all prompts, methods, alphas, and paths
+
+**Plotting 2-row interpolation figures:**
+
+python -m examples.plot_interpolation_figure \
+  --workdir examples/workdir/interpolation/interpolation_cat_to_dog_linearThis produces a figure with CFG in the top row and CFG++ in the bottom row, ordered by \(\alpha\).
+
+---
+
+### 4. Timestep-Dependent Prompt Conditioning
+
+**File:** `examples/timestep_conditioning_experiment.py`
+
+**Purpose:**  
+Investigate what happens when **prompts or prompt weights change over diffusion timesteps**, and how CFG vs CFG++ respond to these dynamic conditioning schedules.
+
+**Concept:**
+
+- **Progressive refinement:**  
+  Start with a simple prompt, gradually switch to a more detailed one (structure first, then details).
+- **Style-content separation:**  
+  Keep a content prompt fixed while increasing weight on a style prompt.
+- **Multi-prompt schedules:**  
+  Move between several prompts over time (e.g., cat → dog → bird).
+- **Negative schedules:**  
+  Gradually increase negative prompt strength to push out undesirable artifacts.
+
+**Examples:**
+
+# Progressive refinement (CFG vs CFG++)
+python -m examples.timestep_conditioning_experiment \
+  --workdir examples/workdir/timestep/person_progressive \
+  --schedule_type progressive \
+  --coarse_prompt "a person" \
+  --fine_prompt "a person with blue eyes, wearing a red shirt, smiling, standing in a park" \
+  --transition_start 0.3 \
+  --transition_end 0.7 \
+  --compare_both \
+  --cfg_guidance 7.5 \
+  --cfgpp_guidance 0.6
+
+# Style-content separation (content + Van Gogh style)
+python -m examples.timestep_conditioning_experiment \
+  --workdir examples/workdir/timestep/cat_van_gogh \
+  --schedule_type style_content \
+  --content_prompt "a cat" \
+  --style_prompt "in the style of Van Gogh" \
+  --content_weight_start 1.0 \
+  --content_weight_end 0.3 \
+  --compare_both \
+  --cfg_guidance 7.5 \
+  --cfgpp_guidance 0.6**Output:**
+
+- Images generated with timestep-dependent conditioning
+- Baseline (constant prompt) images for comparison
+- `timestep_conditioning_summary.json` with schedule configuration
+
+---
+
+## Batch Runners
+
+Several helper scripts run sets of experiments:
+
+- `examples/run_semantic_experiments.sh`
+- `examples/run_semantic_experiments_simple.sh`
+- `examples/run_new_experiments.sh`
+- `examples/run_new_experiments_quick.sh`
+
+Example:
+
+./examples/run_semantic_experiments.sh
+./examples/run_new_experiments.shThese populate `examples/workdir/...` with consistent CFG vs CFG++ experiments ready to be plotted.
+
+---
+
+## Citations
+
+If you use this repository or its experiments, please cite:
+
+**CFG++ (base method):**
+tex
 @inproceedings{
-chung2025cfg,
-title={{CFG}++: Manifold-constrained Classifier Free Guidance for Diffusion Models},
-author={Hyungjin Chung and Jeongsol Kim and Geon Yeong Park and Hyelin Nam and Jong Chul Ye},
-booktitle={The Thirteenth International Conference on Learning Representations},
-year={2025},
-url={https://openreview.net/forum?id=E77uvbOTtp}
-}
-```
-
-> [!note]
-> This work is currently in the preprint stage, and there may be some changes to the code.
+  chung2025cfg,
+  title={{CFG}++: Manifold-constrained Classifier Free Guidance for Diffusion Models},
+  author={Hyungjin Chung and Jeongsol Kim and Geon Yeong Park and Hyelin Nam and Jong Chul Ye},
+  booktitle={The Thirteenth International Conference on Learning Representations},
+  year={2025},
+  url={https://openreview.net/forum?id=E77uvbOTtp}
+}**Original Classifier-Free Guidance (CFG):**
+tex
+@article{ho2022classifierfree,
+  title        = {Classifier-Free Diffusion Guidance},
+  author       = {Ho, Jonathan and Salimans, Tim},
+  journal      = {arXiv preprint arXiv:2207.12598},
+  year         = {2022}
+}This fork builds directly on the official CFG++ implementation and extends it with course-specific experiments and plotting tools for **EECE 7398 – Special Topics: Machine Learning with Small Data**.
